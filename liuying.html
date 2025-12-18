@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Firefly | The Iron Cavalry</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;500;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Ma+Shan+Zheng&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'serif': ['"Playfair Display"', '"Noto Serif SC"', 'serif'],
+                        'hand': ['"Ma Shan Zheng"', 'cursive'],
+                        'tech': ['"Orbitron"', 'sans-serif'], // 萨姆专属字体
+                        'sans': ['system-ui', 'sans-serif'],
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'shake': 'shake 0.5s cubic-bezier(.36,.07,.19,.97) both',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-15px)' },
+                        },
+                        shake: {
+                            '10%, 90%': { transform: 'translate3d(-1px, 0, 0)' },
+                            '20%, 80%': { transform: 'translate3d(2px, 0, 0)' },
+                            '30%, 50%, 70%': { transform: 'translate3d(-4px, 0, 0)' },
+                            '40%, 60%': { transform: 'translate3d(4px, 0, 0)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* --- 核心：CSS 变量主题系统 --- */
+        :root {
+            /* 默认：流萤 (Teal/Green) */
+            --theme-color: #2dd4bf;       /* 主色调 */
+            --theme-dim: rgba(45, 212, 191, 0.1); /* 微弱背景 */
+            --theme-glow: rgba(45, 212, 191, 0.6); /* 发光 */
+            --bg-grad-start: #1b2735;
+            --bg-grad-end: #090a0f;
+            --font-main: "Playfair Display", "Noto Serif SC", serif; /* 优雅字体 */
+        }
+
+        /* 萨姆模式 (War Mode) */
+        .war-mode {
+            --theme-color: #f43f5e;       /* 警告红 */
+            --theme-dim: rgba(244, 63, 94, 0.15);
+            --theme-glow: rgba(244, 63, 94, 0.8);
+            --bg-grad-start: #2a0a0a;
+            --bg-grad-end: #000000;
+            --font-main: "Orbitron", system-ui, sans-serif; /* 机械字体 */
+        }
+
+        /* 全局背景 */
+        body {
+            background: radial-gradient(ellipse at bottom, var(--bg-grad-start) 0%, var(--bg-grad-end) 100%);
+            background-attachment: fixed;
+            transition: background 1s ease;
+            color: white;
+            font-family: var(--font-main); /* 字体随模式切换 */
+        }
+
+        /* 动态类：应用 CSS 变量 */
+        .text-theme { color: var(--theme-color); transition: color 1s ease; }
+        .bg-theme { background-color: var(--theme-color); transition: background-color 1s ease; }
+        .border-theme { border-color: var(--theme-color); transition: border-color 1s ease; }
+        .shadow-theme { box-shadow: 0 0 15px var(--theme-glow); transition: box-shadow 1s ease; }
+        .bg-theme-dim { background-color: var(--theme-dim); transition: background-color 1s ease; }
+        .from-theme-transparent { --tw-gradient-from: var(--theme-dim); } /* 用于渐变线 */
+
+        /* 粒子系统 */
+        .particle {
+            position: fixed;
+            width: 4px;
+            height: 4px;
+            background: var(--theme-color); /* 粒子颜色随主题变 */
+            box-shadow: 0 0 10px var(--theme-color);
+            border-radius: 50%;
+            animation: rise 15s infinite linear;
+            opacity: 0;
+            pointer-events: none;
+            transition: background 1s ease, box-shadow 1s ease;
+        }
+
+        /* 萨姆模式下粒子加速 */
+        .war-mode .particle {
+            animation-duration: 3s; /* 加速 */
+            height: 6px; /* 变大 */
+        }
+
+        @keyframes rise {
+            0% { transform: translateY(105vh) scale(0); opacity: 0; }
+            50% { opacity: 0.8; }
+            100% { transform: translateY(-10vh) scale(1.5); opacity: 0; }
+        }
+
+        /* 玻璃拟态卡片 */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.5s ease;
+        }
+        
+        /* 萨姆模式下卡片边框变红 */
+        .war-mode .glass-card {
+            border-color: rgba(244, 63, 94, 0.3);
+            background: rgba(42, 10, 10, 0.4);
+        }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+
+        /* 图片遮罩 */
+        .visual-mask {
+            mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+        }
+
+        /* 震动特效 (变身时) */
+        .shake-effect {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+    </style>
+</head>
+<body class="min-h-screen overflow-x-hidden selection:bg-white/20" id="main-body">
+
+    <!-- BGM -->
+    <audio id="bgm" loop>
+        <source src="" type="audio/mpeg">
+    </audio>
+
+    <!-- BGM 提示弹窗（首次进入询问） -->
+    <div id="bgm-modal" class="fixed inset-0 z-[120] hidden">
+        <div class="absolute inset-0 bg-black/70 backdrop-blur-sm"></div>
+        <div class="relative w-full h-full flex items-center justify-center px-6">
+            <div class="glass-card w-full max-w-sm rounded-2xl p-6 border border-white/10">
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
+                        <i class="fa-solid fa-music text-theme"></i>
+                    </div>
+                    <div>
+                        <div class="font-serif text-lg tracking-wider">开启背景音乐？</div>
+                        <div class="text-xs opacity-60 font-sans mt-1">建议开启以获得更完整体验（可随时关闭）</div>
+                    </div>
+                </div>
+                <label class="flex items-center gap-2 text-xs opacity-70 font-sans select-none mt-4">
+                    <input id="bgm-remember" type="checkbox" class="accent-[var(--theme-color)]" checked>
+                    记住我的选择（下次不再提示）
+                </label>
+                <div class="mt-5 flex gap-3">
+                    <button id="bgm-yes" class="flex-1 px-4 py-3 rounded-xl bg-theme/20 hover:bg-theme/30 border border-theme/40 transition-all active:scale-[0.99]">
+                        <span class="text-xs tracking-[0.25em] font-bold">开启</span>
+                    </button>
+                    <button id="bgm-no" class="flex-1 px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-all active:scale-[0.99]">
+                        <span class="text-xs tracking-[0.25em] font-bold opacity-80">不开启</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 启动页 (Start Screen) -->
+    <div id="start-screen" class="fixed inset-0 z-[100] bg-slate-950 flex flex-col items-center justify-center transition-opacity duration-700 px-6">
+        <div class="text-center space-y-8 animate-fade-in w-full max-w-sm relative">
+            <!-- 装饰圈 -->
+            <div class="w-24 h-24 rounded-full border border-dream-teal/30 flex items-center justify-center mx-auto animate-pulse-slow relative">
+                <div class="absolute inset-0 border border-dream-teal/10 rounded-full scale-150"></div>
+                <i class="fa-solid fa-firefly text-dream-teal text-4xl"></i>
+            </div>
+            
+            <div class="space-y-2">
+                <h1 class="font-serif text-3xl tracking-[0.3em] text-white/90">FIREFLY</h1>
+                <p class="font-sans text-[10px] text-white/40 tracking-widest uppercase">
+                    System ID: AR-26710
+                </p>
+            </div>
+            
+            <button onclick="enterSite()" class="w-full group relative px-8 py-4 overflow-hidden rounded-sm bg-white/5 hover:bg-dream-teal/10 border border-white/10 transition-all duration-300 active:scale-95">
+                <div class="absolute inset-0 w-1 bg-dream-teal/50 transition-all duration-300 group-hover:w-full opacity-10"></div>
+                <span class="relative z-10 font-serif text-xs tracking-[0.2em] group-hover:text-dream-teal transition-colors font-bold">
+                    [ ESTABLISH LINK ]
+                </span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 粒子层 -->
+    <div id="particles" class="fixed inset-0 pointer-events-none z-0"></div>
+
+    <!-- 导航栏 -->
+    <nav class="fixed top-0 left-0 w-full px-6 py-5 md:px-12 md:py-8 flex justify-between items-center z-50 transition-opacity duration-1000 opacity-0 bg-gradient-to-b from-black/60 to-transparent pointer-events-none" id="navbar">
+        <!-- Logo -->
+        <div class="text-xl md:text-2xl tracking-widest opacity-90 font-bold pointer-events-auto">
+            <span class="text-theme">F</span>irefly<span class="text-xs align-top opacity-50 ml-1 font-sans">.OS</span>
+        </div>
+
+        <!-- Controls -->
+        <div class="flex items-center gap-4 pointer-events-auto">
+            <button onclick="toggleAudio()" class="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center bg-white/5 backdrop-blur hover:bg-white/10 transition-all group">
+                <i id="audio-icon" class="fa-solid fa-volume-high text-xs opacity-70 group-hover:text-theme transition-colors"></i>
+            </button>
+            
+            <!-- 变身开关 -->
+            <button onclick="toggleIdentity()" class="group flex items-center gap-3 px-5 py-2.5 rounded-full border border-white/20 hover:border-theme/50 active:bg-white/10 transition-all duration-300 backdrop-blur-md bg-white/5">
+                <span class="text-[10px] md:text-xs tracking-widest opacity-80 group-hover:opacity-100 transition-opacity font-bold whitespace-nowrap" id="switch-text">ENTER REALITY</span>
+                <!-- 呼吸灯：颜色由 CSS 变量控制 -->
+                <div class="w-2 h-2 rounded-full bg-theme shadow-theme transition-all duration-500"></div>
+            </button>
+        </div>
+    </nav>
+
+    <!-- 
+        主布局容器 
+        PC: grid-cols-2 (左右对齐，Grid比Flex更稳)
+        Mobile: flex-col-reverse (图在上，文在下)
+        min-h-screen: 保证最小高度充满屏幕
+    -->
+    <main class="relative z-10 w-full min-h-screen flex flex-col-reverse md:grid md:grid-cols-2 items-center container mx-auto px-6 md:px-16 transition-opacity duration-1000 opacity-0 pt-20 pb-10 md:py-0" id="main-content">
+        
+        <!-- 1. 左侧：文字区域 (Grid Left / Flex Bottom) -->
+        <div class="w-full space-y-8 relative md:pr-12 mt-8 md:mt-0">
+            <!-- 侧边装饰线 (CSS变量控制颜色) -->
+            <div class="absolute -left-6 top-0 bottom-0 w-[2px] bg-gradient-to-b from-transparent via-[var(--theme-color)] to-transparent opacity-50 hidden md:block transition-colors duration-1000"></div>
+
+            <div class="overflow-hidden text-center md:text-left">
+                <h2 class="text-xs font-tech tracking-[0.3em] opacity-60 mb-3 text-theme transition-colors" id="subtitle">STELLARON HUNTER</h2>
+                
+                <h1 class="text-5xl md:text-7xl lg:text-8xl font-medium leading-none mb-6 relative inline-block">
+                    <span class="block transition-all duration-700" id="title-line-1">流萤</span>
+                    <!-- 标题下的光晕 -->
+                    <div class="absolute -inset-4 bg-theme blur-3xl opacity-20 -z-10 rounded-full pointer-events-none"></div>
+                </h1>
+
+                <div class="relative">
+                    <i class="fa-solid fa-quote-left text-theme opacity-20 text-4xl absolute -top-4 -left-4 hidden md:block"></i>
+                    <p class="font-hand text-xl md:text-2xl opacity-80 leading-relaxed transition-all duration-700 md:pl-8" id="quote">
+                        "我梦见一片焦土……<br>一株破土而出的新蕊，<br>它迎着朝阳绽放，向我低语。"
+                    </p>
+                </div>
+            </div>
+
+            <!-- 清单卡片 -->
+            <div class="w-full flex justify-center md:justify-start">
+                <div class="glass-card p-6 md:p-8 rounded-xl w-full md:max-w-md transform transition-all duration-500 hover:translate-x-1 border-l-4 border-l-theme">
+                    <h3 class="text-[10px] font-bold tracking-widest border-b border-white/10 pb-3 mb-5 opacity-50 flex justify-between items-center" id="list-title">
+                        <span>WISH LIST</span>
+                        <i class="fa-solid fa-database"></i>
+                    </h3>
+                    <!-- 列表内容由 JS 生成，颜色会自动应用 -->
+                    <ul class="space-y-4 text-base md:text-lg opacity-90 transition-all duration-500" id="list-content">
+                        <!-- JS Rendered -->
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. 右侧：视觉区域 (Grid Right / Flex Top) -->
+        <!-- 
+           PC: h-screen (让图片垂直居中且足够大)
+           Mobile: h-[50vh] (半屏高度)
+        -->
+        <div class="w-full h-[50vh] md:h-screen relative flex items-center justify-center group shrink-0">
+            
+            <!-- 背景大光晕 (颜色由 CSS 变量控制) -->
+            <div class="absolute w-[280px] h-[280px] md:w-[600px] md:h-[600px] bg-theme opacity-20 rounded-full blur-[80px] md:blur-[120px] transition-colors duration-1000 animate-pulse pointer-events-none"></div>
+            
+            <!-- 图片边框容器 -->
+            <div class="relative z-10 w-64 h-80 md:w-[24rem] md:h-[36rem] glass-card rounded-t-[10rem] rounded-b-[10rem] overflow-hidden border-2 border-white/20 transition-all duration-700 shadow-2xl hover:border-theme/50">
+                
+                <!-- 占位图 1: 流萤 -->
+                <img id="img-firefly" 
+                     src="https://images.unsplash.com/photo-1515405295579-ba7f9f145f55?q=80&w=1000&auto=format&fit=crop" 
+                     class="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 opacity-100 visual-mask scale-110"
+                     alt="Firefly Form">
+
+                <!-- 占位图 2: 萨姆 (默认隐藏) -->
+                <img id="img-sam" 
+                     src="https://images.unsplash.com/photo-1535378437327-10ffb8b4e95c?q=80&w=1000&auto=format&fit=crop" 
+                     class="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 opacity-0 visual-mask scale-110 grayscale-[30%] contrast-125"
+                     alt="SAM Form">
+
+                <!-- 底部渐变 & 字幕 -->
+                <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent pointer-events-none"></div>
+                <div class="absolute bottom-10 left-0 w-full text-center z-20">
+                    <span class="font-hand text-xl md:text-2xl opacity-90 text-white drop-shadow-md transition-all duration-700 tracking-widest" id="visual-caption">飞舞的萤火</span>
+                </div>
+            </div>
+
+            <!-- 悬浮装饰 (PC Only) -->
+            <div class="absolute -right-8 top-1/4 w-20 h-20 glass-card rounded-full hidden md:flex items-center justify-center animate-float-delayed backdrop-blur-xl z-0 border-theme">
+                 <i class="fa-solid fa-dna text-theme opacity-60 text-2xl"></i>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- 底部状态条 -->
+    <footer class="fixed bottom-4 w-full text-center z-10 opacity-0 transition-opacity duration-1000 pointer-events-none mix-blend-plus-lighter" id="footer-text">
+        <div class="inline-block px-4 py-1 rounded-full bg-black/40 backdrop-blur border border-white/5 text-[10px] tracking-[0.3em] text-white/50">
+            ENTROPY LOSS SYNDROME // STABLE
+        </div>
+    </footer>
+
+    <script>
+        // --- 初始化列表内容 ---
+        const listData = {
+            dream: [
+                '吃橡木蛋糕卷',
+                '学习当地的通用语',
+                '哪怕一次，作为“流萤”活下去'
+            ],
+            reality: [
+                '限制器：解除 (LIMITER RELEASED)',
+                '炉心温度：3000°C (SCORCHED EARTH)',
+                '目标：确认歼灭 (EXTERMINATE)'
+            ]
+        };
+
+        // 渲染列表函数 (自动应用主题颜色)
+        function renderList(type) {
+            const listEl = document.getElementById('list-content');
+            const items = listData[type];
+            // 图标随主题变化: 圆圈 vs 警告三角形
+            const icon = type === 'dream' ? 'fa-circle' : 'fa-triangle-exclamation';
+            
+            listEl.innerHTML = items.map(item => `
+                <li class="flex items-center gap-4 group">
+                    <i class="fa-solid ${icon} text-[10px] text-theme opacity-60 group-hover:opacity-100 transition-opacity"></i>
+                    <span class="border-b border-transparent group-hover:border-theme/50 transition-colors pb-0.5">${item}</span>
+                </li>
+            `).join('');
+        }
+
+        // 页面加载默认渲染流萤列表
+        renderList('dream');
+
+        // --- 核心交互逻辑 ---
+
+        // 1. 启动
+        function enterSite() {
+            const startScreen = document.getElementById('start-screen');
+            startScreen.style.opacity = '0';
+            setTimeout(() => { startScreen.style.display = 'none'; }, 700);
+
+            ['navbar', 'main-content', 'footer-text'].forEach(id => {
+                document.getElementById(id).classList.remove('opacity-0');
+            });
+
+            const bgm = document.getElementById('bgm');
+            bgm.volume = 0.4;
+
+            // 进入时提示是否开启 BGM（首次）；若已记住偏好则直接按偏好执行
+            const pref = localStorage.getItem('bgm_enabled'); // '1'|'0'|null
+            if (pref === '1') {
+                bgm.play().catch(e => console.log("Autoplay blocked:", e));
+                applyAudioIcon(false);
+            } else if (pref === '0') {
+                bgm.pause();
+                applyAudioIcon(true);
+            } else {
+                showBgmPrompt();
+            }
+        }
+
+        // 2. 音频切换
+        function toggleAudio() {
+            const bgm = document.getElementById('bgm');
+            const icon = document.getElementById('audio-icon');
+            if (bgm.paused) {
+                bgm.play();
+                icon.classList.replace('fa-volume-xmark', 'fa-volume-high');
+                localStorage.setItem('bgm_enabled', '1');
+            } else {
+                bgm.pause();
+                icon.classList.replace('fa-volume-high', 'fa-volume-xmark');
+                localStorage.setItem('bgm_enabled', '0');
+            }
+        }
+
+        function applyAudioIcon(isMuted) {
+            const icon = document.getElementById('audio-icon');
+            if (!icon) return;
+            icon.classList.remove('fa-volume-high', 'fa-volume-xmark');
+            icon.classList.add(isMuted ? 'fa-volume-xmark' : 'fa-volume-high');
+        }
+
+        function showBgmPrompt() {
+            const modal = document.getElementById('bgm-modal');
+            if (!modal) return;
+            modal.classList.remove('hidden');
+        }
+
+        function hideBgmPrompt() {
+            const modal = document.getElementById('bgm-modal');
+            if (!modal) return;
+            modal.classList.add('hidden');
+        }
+
+        // 绑定弹窗按钮
+        (function bindBgmPrompt() {
+            const yesBtn = document.getElementById('bgm-yes');
+            const noBtn = document.getElementById('bgm-no');
+            if (!yesBtn || !noBtn) return;
+
+            const bgm = document.getElementById('bgm');
+            const remember = () => !!document.getElementById('bgm-remember')?.checked;
+
+            yesBtn.addEventListener('click', () => {
+                if (remember()) localStorage.setItem('bgm_enabled', '1');
+                try {
+                    bgm.volume = 0.4;
+                    bgm.play().catch(e => console.log("Autoplay blocked:", e));
+                } catch (e) {
+                    console.log(e);
+                }
+                applyAudioIcon(false);
+                hideBgmPrompt();
+            });
+
+            noBtn.addEventListener('click', () => {
+                if (remember()) localStorage.setItem('bgm_enabled', '0');
+                try { bgm.pause(); } catch (e) {}
+                applyAudioIcon(true);
+                hideBgmPrompt();
+            });
+        })();
+
+        // 3. 粒子系统
+        function createParticles() {
+            const container = document.getElementById('particles');
+            const count = window.innerWidth < 768 ? 15 : 40; // 移动端减负
+            container.innerHTML = ''; // 清空旧的
+
+            for(let i=0; i<count; i++) {
+                const p = document.createElement('div');
+                p.classList.add('particle');
+                p.style.left = Math.random() * 100 + 'vw';
+                p.style.animationDuration = (Math.random() * 10 + 10) + 's';
+                p.style.animationDelay = (Math.random() * 5) + 's';
+                container.appendChild(p);
+            }
+        }
+        createParticles();
+
+        // 4. 形态切换 (核心)
+        let isWarMode = false;
+        
+        const textContent = {
+            dream: {
+                subtitle: 'STELLARON HUNTER',
+                title: '流萤',
+                quote: '"我梦见一片焦土……<br>一株破土而出的新蕊，<br>它迎着朝阳绽放，向我低语。"',
+                listTitle: 'WISH LIST',
+                switchText: 'ENTER REALITY',
+                footer: 'ENTROPY LOSS SYNDROME // STABLE',
+                caption: '飞舞的萤火'
+            },
+            reality: {
+                subtitle: 'STRATEGIC ASSAULT MECH',
+                title: '萨姆',
+                quote: '"焦土作战，执行。<br>我将，<br>点燃大海！"',
+                listTitle: 'COMBAT PROTOCOL',
+                switchText: 'RETURN TO DREAM',
+                footer: 'WARNING: HIGH TEMPERATURE // CRITICAL',
+                caption: '格拉默的铁骑'
+            }
+        };
+
+        function toggleIdentity() {
+            isWarMode = !isWarMode;
+            const body = document.body;
+            const data = isWarMode ? textContent.reality : textContent.dream;
+
+            // 1. 切换 Body 类名 -> 触发 CSS 变量变化 (全站变色)
+            if (isWarMode) {
+                body.classList.add('war-mode');
+                document.getElementById('img-sam').classList.replace('opacity-0', 'opacity-100');
+                document.getElementById('img-firefly').classList.replace('opacity-100', 'opacity-0');
+            } else {
+                body.classList.remove('war-mode');
+                document.getElementById('img-firefly').classList.replace('opacity-0', 'opacity-100');
+                document.getElementById('img-sam').classList.replace('opacity-100', 'opacity-0');
+            }
+
+            // 2. 触发震动特效
+            document.getElementById('main-content').classList.add('shake-effect');
+            setTimeout(() => document.getElementById('main-content').classList.remove('shake-effect'), 500);
+
+            // 3. 文本内容的淡入淡出切换
+            const elements = ['title-line-1', 'quote', 'list-content', 'visual-caption', 'subtitle', 'switch-text', 'footer-text'];
+            
+            // 先淡出
+            elements.forEach(id => {
+                const el = document.getElementById(id);
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(5px)';
+            });
+
+            setTimeout(() => {
+                // 更新文字
+                document.getElementById('subtitle').innerText = data.subtitle;
+                document.getElementById('title-line-1').innerText = data.title;
+                document.getElementById('quote').innerHTML = data.quote;
+                document.getElementById('list-title').innerHTML = `<span>${data.listTitle}</span> <i class="fa-solid fa-microchip"></i>`;
+                document.getElementById('switch-text').innerText = data.switchText;
+                document.querySelector('#footer-text div').innerText = data.footer;
+                document.getElementById('visual-caption').innerText = data.caption;
+                
+                // 重新渲染列表 (图标和内容)
+                renderList(isWarMode ? 'reality' : 'dream');
+
+                // 淡入
+                elements.forEach(id => {
+                    const el = document.getElementById(id);
+                    el.style.opacity = '1';
+                    el.style.transform = 'translateY(0)';
+                });
+            }, 400);
+        }
+    </script>
+</body>
+</html>
