@@ -115,6 +115,41 @@
             border-color: #7aa2f7;
             box-shadow: 0 0 0 3px rgba(122, 162, 247, 0.15);
         }
+        .tutorial-toggle {
+            font-size: 13px;
+            color: #7aa2f7;
+            cursor: pointer;
+            margin-top: 8px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .tutorial-toggle:hover { text-decoration: underline; }
+        .tutorial-toggle .arrow { transition: transform 0.2s; }
+        .tutorial-toggle.open .arrow { transform: rotate(90deg); }
+        .tutorial-content {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(122, 129, 168, 0.15);
+            font-size: 13px;
+            color: #a9b1d6;
+            line-height: 1.7;
+            display: none;
+        }
+        .tutorial-content.show { display: block; }
+        .tutorial-content ol { margin: 0 0 0 18px; padding: 0; }
+        .tutorial-content li { margin-bottom: 6px; }
+        .tutorial-content a {
+            color: #7aa2f7;
+            text-decoration: none;
+        }
+        .tutorial-content a:hover { text-decoration: underline; }
+        .tutorial-content code {
+            background: rgba(122, 129, 168, 0.2);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
     </style>
 </head>
 <body>
@@ -124,6 +159,18 @@
         <div class="card">
             <div class="card-label">DeepSeek API Key</div>
             <input type="password" id="apiKey" placeholder="请输入你的 DeepSeek API Key（sk-...）" autocomplete="off">
+            <div class="tutorial-toggle" id="tutorialToggle" role="button" tabindex="0">
+                <span class="arrow">▶</span> 如何获取 API Key？
+            </div>
+            <div class="tutorial-content" id="tutorialContent">
+                <ol>
+                    <li>打开 DeepSeek 开放平台：<a href="https://platform.deepseek.com" target="_blank" rel="noopener">platform.deepseek.com</a></li>
+                    <li>使用手机号或第三方账号<strong>注册/登录</strong>。</li>
+                    <li>进入「<strong>API Keys</strong>」或「密钥管理」页面，点击「<strong>创建 API Key</strong>」。</li>
+                    <li>复制生成的 Key（格式为 <code>sk-...</code>），粘贴到上方输入框即可使用。</li>
+                </ol>
+                <p style="margin-top: 10px; color: #565f89;">按量计费，本程序消耗token极少，以分为单位，不用担心费用问题。</p>
+            </div>
         </div>
 
         <div class="card">
@@ -148,7 +195,10 @@
             var btnSend = document.getElementById('btnSend');
             var result = document.getElementById('result');
 
+            if (!result) return;
+
             function setResult(text, isError) {
+                if (!result) return;
                 var hasMeta = text && text.indexOf('（消耗 token:') !== -1;
                 var main = text || '';
                 var meta = '';
@@ -164,9 +214,9 @@
                 if (isError) result.classList.add('error');
             }
 
-            btnSend.addEventListener('click', function () {
-                var key = (apiKeyInput.value || '').trim();
-                var text = (userInput.value || '').trim();
+            if (btnSend) btnSend.addEventListener('click', function () {
+                var key = (apiKeyInput && apiKeyInput.value || '').trim();
+                var text = (userInput && userInput.value || '').trim();
 
                 if (!key) { setResult('请先输入 DeepSeek API Key', true); return; }
                 if (!text) { setResult('请输入内容', true); return; }
@@ -191,26 +241,55 @@
                     },
                     body: JSON.stringify(payload)
                 })
-                    .then(function (res) { return res.json(); })
-                    .then(function (json) {
-                        if (json.choices && json.choices.length > 0) {
+                    .then(function (res) {
+                        return res.text().then(function (text) {
+                            try {
+                                return { ok: res.ok, status: res.status, data: JSON.parse(text) };
+                            } catch (e) {
+                                return { ok: false, status: res.status, data: null, raw: text };
+                            }
+                        });
+                    })
+                    .then(function (out) {
+                        var json = out.data;
+                        if (out.ok && json && json.choices && json.choices.length > 0) {
                             var content = (json.choices[0].message && json.choices[0].message.content) || '';
                             var meta = '';
                             if (json.usage && json.usage.total_tokens != null) {
                                 meta = '（消耗 token: ' + json.usage.total_tokens + '）';
                             }
                             setResult(content + (meta ? '\n\n' + meta : ''), false);
-                        } else if (json.error) {
+                        } else if (json && json.error) {
                             setResult('API 错误: ' + (json.error.message || json.error.code || '未知错误'), true);
                         } else {
-                            setResult('错误: 无法解析回复', true);
+                            setResult('错误: ' + (out.status ? 'HTTP ' + out.status : '无法解析回复'), true);
                         }
                     })
                     .catch(function (err) {
-                        setResult('请求失败: ' + (err.message || String(err)), true);
+                        var msg = err && (err.message || String(err));
+                        if (/Failed to fetch|NetworkError|Load failed/i.test(msg)) {
+                            setResult('网络请求失败（可能是跨域 CORS）。请通过 http 访问本页或使用后端代理。', true);
+                        } else {
+                            setResult('请求失败: ' + (msg || '未知错误'), true);
+                        }
                     })
                     .finally(function () { btnSend.disabled = false; });
             });
+
+            var tutorialToggle = document.getElementById('tutorialToggle');
+            var tutorialContent = document.getElementById('tutorialContent');
+            if (tutorialToggle && tutorialContent) {
+                tutorialToggle.addEventListener('click', function () {
+                    tutorialContent.classList.toggle('show');
+                    tutorialToggle.classList.toggle('open');
+                });
+                tutorialToggle.addEventListener('keydown', function (e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        tutorialToggle.click();
+                    }
+                });
+            }
         })();
     </script>
 </body>
