@@ -320,6 +320,7 @@
             var BATCH_SIZE = 10;
             var loadedIndex = 0;
             var isLoading = false;
+            var allLoaded = false;
 
             function createPhotoItem(file) {
                 var item = document.createElement('div');
@@ -344,7 +345,7 @@
             }
 
             function loadNextBatch() {
-                if (isLoading) return;
+                if (isLoading || allLoaded) return;
                 isLoading = true;
 
                 var end = Math.min(loadedIndex + BATCH_SIZE, shuffled.length);
@@ -354,6 +355,7 @@
                 loadedIndex = end;
 
                 if (loadedIndex >= shuffled.length) {
+                    allLoaded = true;
                     loading.textContent = '已加载全部 ✿';
                     loading.dataset.done = 'true';
                     if (observer) observer.disconnect();
@@ -366,8 +368,8 @@
                 isLoading = false;
 
                 var rect = loading.getBoundingClientRect();
-                if (rect.top < window.innerHeight && loadedIndex < shuffled.length) {
-                    setTimeout(loadNextBatch, 0);
+                if (rect.top <= window.innerHeight) {
+                    requestAnimationFrame(loadNextBatch);
                 }
             }
 
