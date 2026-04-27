@@ -82,21 +82,19 @@
         }
 
         #masonry-container {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 16px;
+            position: relative;
             max-width: 1300px;
             margin: 0 auto;
         }
 
         .photo-item {
+            position: absolute;
             border-radius: 14px;
             overflow: hidden;
             background: #fff;
             box-shadow: 0 4px 16px rgba(233, 30, 99, 0.10);
-            transition: transform 0.35s ease, box-shadow 0.35s ease;
+            transition: transform 0.35s ease, box-shadow 0.35s ease, top 0.3s ease, left 0.3s ease;
             cursor: pointer;
-            position: relative;
         }
 
         .photo-item:hover {
@@ -238,17 +236,17 @@
         }
 
         @media (max-width: 1024px) {
-            #masonry-container { grid-template-columns: repeat(3, 1fr); }
+            #masonry-container { max-width: 1000px; }
         }
 
         @media (max-width: 768px) {
-            #masonry-container { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+            #masonry-container { max-width: 750px; }
             h1 { font-size: 1.6em; }
             .subtitle { font-size: 0.8em; }
         }
 
         @media (max-width: 480px) {
-            #masonry-container { grid-template-columns: 1fr; }
+            #masonry-container { max-width: 100%; }
             body { padding: 15px 10px; }
             h1 { font-size: 1.3em; letter-spacing: 2px; }
         }
@@ -321,6 +319,48 @@
             var allLoaded = false;
             console.log('[PhotoWall] total ' + PHOTO_IMAGES.length + ' images, batch=' + BATCH_SIZE);
 
+            function getColCount() {
+                var w = window.innerWidth;
+                if (w <= 480) return 1;
+                if (w <= 768) return 2;
+                if (w <= 1024) return 3;
+                return 4;
+            }
+
+            function getGap() {
+                return window.innerWidth <= 768 ? 12 : 16;
+            }
+
+            function layoutMasonry() {
+                var items = container.querySelectorAll('.photo-item');
+                if (!items.length) return;
+
+                var colCount = getColCount();
+                var gap = getGap();
+                var containerW = container.offsetWidth;
+                var colW = (containerW - gap * (colCount - 1)) / colCount;
+
+                var heights = new Array(colCount).fill(0);
+
+                for (var k = 0; k < items.length; k++) {
+                    var item = items[k];
+                    var col = 0;
+                    for (var c = 1; c < colCount; c++) {
+                        if (heights[c] < heights[col]) col = c;
+                    }
+                    item.style.width = colW + 'px';
+                    item.style.left = col * (colW + gap) + 'px';
+                    item.style.top = heights[col] + 'px';
+                    heights[col] += item.offsetHeight + gap;
+                }
+
+                var maxH = 0;
+                for (var c = 0; c < colCount; c++) {
+                    if (heights[c] > maxH) maxH = heights[c];
+                }
+                container.style.height = maxH + 'px';
+            }
+
             function createPhotoItem(file) {
                 var item = document.createElement('div');
                 item.className = 'photo-item';
@@ -332,6 +372,10 @@
 
                 img.addEventListener('click', function () {
                     openModal(this.dataset.original);
+                });
+
+                img.addEventListener('load', function () {
+                    layoutMasonry();
                 });
 
                 var hint = document.createElement('div');
@@ -356,6 +400,8 @@
                 }
                 loadedIndex = end;
 
+                layoutMasonry();
+
                 if (loadedIndex >= shuffled.length) {
                     allLoaded = true;
                     loading.textContent = '已加载全部 ✿';
@@ -366,28 +412,33 @@
 
                 loading.textContent = '滚动加载更多';
                 delete loading.dataset.done;
-                console.log('[PhotoWall] batch done, loading text updated, waiting for next trigger');
+
+                var rect = loading.getBoundingClientRect();
+                if (rect.top <= window.innerHeight) {
+                    setTimeout(loadNextBatch, 100);
+                }
             }
 
-            var scrollCount = 0;
             var scrollPending = false;
             window.addEventListener('scroll', function () {
                 if (scrollPending) return;
                 scrollPending = true;
                 requestAnimationFrame(function () {
                     scrollPending = false;
-                    scrollCount++;
                     if (allLoaded) return;
                     var rect = loading.getBoundingClientRect();
-                    var hit = rect.top <= window.innerHeight + 200;
-                    if (scrollCount % 10 === 1) {
-                        console.log('[PhotoWall] scroll #' + scrollCount + ' loadingRect.top=' + Math.round(rect.top) + ' windowH=' + window.innerHeight + ' hit=' + hit);
-                    }
-                    if (hit) {
-                        console.log('[PhotoWall] scroll triggered load, loadingRect.top=' + Math.round(rect.top));
+                    if (rect.top <= window.innerHeight + 200) {
                         loadNextBatch();
                     }
                 });
+            });
+
+            var resizeTimer = false;
+            window.addEventListener('resize', function () {
+                if (resizeTimer) clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(function () {
+                    layoutMasonry();
+                }, 200);
             });
 
             console.log('[PhotoWall] initial loadNextBatch call');
