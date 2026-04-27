@@ -145,6 +145,10 @@
             vertical-align: middle;
         }
 
+        #loading[data-done]::after {
+            display: none;
+        }
+
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
@@ -225,8 +229,9 @@
         <!-- <div class="subtitle">— 与你共度的每一帧 —</div> -->
     </div>
 
-    <div id="loading">正在加载</div>
     <div id="masonry-container"></div>
+
+    <div id="loading">正在加载</div>
 
     <div id="modal">
         <span class="close">&times;</span>
@@ -253,7 +258,6 @@
             }
 
             var shuffled = shuffle(PHOTO_IMAGES.slice());
-            loading.style.display = 'none';
 
             var modal = document.getElementById('modal');
             var modalImg = document.getElementById('modal-image');
@@ -279,7 +283,10 @@
                 if (e.key === 'Escape') closeModal();
             });
 
-            shuffled.forEach(function (file) {
+            var BATCH_SIZE = 10;
+            var loadedIndex = 0;
+
+            function createPhotoItem(file) {
                 var item = document.createElement('div');
                 item.className = 'photo-item';
 
@@ -294,8 +301,37 @@
                 });
 
                 item.appendChild(img);
-                container.appendChild(item);
-            });
+                return item;
+            }
+
+            function loadNextBatch() {
+                var end = Math.min(loadedIndex + BATCH_SIZE, shuffled.length);
+                for (var i = loadedIndex; i < end; i++) {
+                    container.appendChild(createPhotoItem(shuffled[i]));
+                }
+                loadedIndex = end;
+
+                if (loadedIndex >= shuffled.length) {
+                    loading.textContent = '已加载全部 ✿';
+                    loading.dataset.done = 'true';
+                    if (observer) observer.disconnect();
+                    return;
+                }
+
+                loading.textContent = '滚动加载更多';
+                delete loading.dataset.done;
+            }
+
+            var observer = new IntersectionObserver(function (entries) {
+                if (entries[0].isIntersecting && loadedIndex < shuffled.length) {
+                    observer.unobserve(loading);
+                    loadNextBatch();
+                    observer.observe(loading);
+                }
+            }, { rootMargin: '200px' });
+
+            loadNextBatch();
+            observer.observe(loading);
         })();
     </script>
 
