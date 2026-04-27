@@ -344,6 +344,7 @@
             }
 
             function loadNextBatch() {
+                if (isLoading) return;
                 isLoading = true;
 
                 var end = Math.min(loadedIndex + BATCH_SIZE, shuffled.length);
@@ -365,13 +366,13 @@
                 isLoading = false;
 
                 var rect = loading.getBoundingClientRect();
-                if (rect.top <= window.innerHeight && loadedIndex < shuffled.length) {
-                    loadNextBatch();
+                if (rect.top < window.innerHeight && loadedIndex < shuffled.length) {
+                    setTimeout(loadNextBatch, 0);
                 }
             }
 
             var observer = new IntersectionObserver(function (entries) {
-                if (entries[0].isIntersecting && !isLoading && loadedIndex < shuffled.length) {
+                if (entries[0].isIntersecting) {
                     loadNextBatch();
                 }
             }, { rootMargin: '200px' });
