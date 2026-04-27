@@ -82,16 +82,14 @@
         }
 
         #masonry-container {
-            column-count: 4;
-            column-gap: 16px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
             max-width: 1300px;
             margin: 0 auto;
-            overflow: hidden;
         }
 
         .photo-item {
-            break-inside: avoid;
-            margin-bottom: 16px;
             border-radius: 14px;
             overflow: hidden;
             background: #fff;
@@ -240,18 +238,17 @@
         }
 
         @media (max-width: 1024px) {
-            #masonry-container { column-count: 3; }
+            #masonry-container { grid-template-columns: repeat(3, 1fr); }
         }
 
         @media (max-width: 768px) {
-            #masonry-container { column-count: 2; column-gap: 12px; }
-            .photo-item { margin-bottom: 12px; }
+            #masonry-container { grid-template-columns: repeat(2, 1fr); gap: 12px; }
             h1 { font-size: 1.6em; }
             .subtitle { font-size: 0.8em; }
         }
 
         @media (max-width: 480px) {
-            #masonry-container { column-count: 1; }
+            #masonry-container { grid-template-columns: 1fr; }
             body { padding: 15px 10px; }
             h1 { font-size: 1.3em; letter-spacing: 2px; }
         }
