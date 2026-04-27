@@ -19,6 +19,7 @@
             min-height: 100vh;
             padding: 30px 20px;
             position: relative;
+            overflow-x: hidden;
         }
 
         body::before {
@@ -85,6 +86,7 @@
             column-gap: 16px;
             max-width: 1300px;
             margin: 0 auto;
+            overflow: hidden;
         }
 
         .photo-item {
@@ -371,18 +373,24 @@
             }
 
             var scrollCount = 0;
+            var scrollPending = false;
             window.addEventListener('scroll', function () {
-                scrollCount++;
-                if (allLoaded) return;
-                var rect = loading.getBoundingClientRect();
-                var hit = rect.top <= window.innerHeight + 200;
-                if (scrollCount % 10 === 1) {
-                    console.log('[PhotoWall] scroll #' + scrollCount + ' loadingRect.top=' + Math.round(rect.top) + ' windowH=' + window.innerHeight + ' hit=' + hit);
-                }
-                if (hit) {
-                    console.log('[PhotoWall] scroll triggered load, loadingRect.top=' + Math.round(rect.top));
-                    loadNextBatch();
-                }
+                if (scrollPending) return;
+                scrollPending = true;
+                requestAnimationFrame(function () {
+                    scrollPending = false;
+                    scrollCount++;
+                    if (allLoaded) return;
+                    var rect = loading.getBoundingClientRect();
+                    var hit = rect.top <= window.innerHeight + 200;
+                    if (scrollCount % 10 === 1) {
+                        console.log('[PhotoWall] scroll #' + scrollCount + ' loadingRect.top=' + Math.round(rect.top) + ' windowH=' + window.innerHeight + ' hit=' + hit);
+                    }
+                    if (hit) {
+                        console.log('[PhotoWall] scroll triggered load, loadingRect.top=' + Math.round(rect.top));
+                        loadNextBatch();
+                    }
+                });
             });
 
             console.log('[PhotoWall] initial loadNextBatch call');
