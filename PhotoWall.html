@@ -319,13 +319,13 @@
 
             var BATCH_SIZE = 10;
             var loadedIndex = 0;
+            var isLoading = false;
 
             function createPhotoItem(file) {
                 var item = document.createElement('div');
                 item.className = 'photo-item';
 
                 var img = document.createElement('img');
-                img.loading = 'lazy';
                 img.src = 'PhotoWall/thumbs/' + file;
                 img.alt = file;
                 img.dataset.original = 'PhotoWall/' + file;
@@ -344,6 +344,9 @@
             }
 
             function loadNextBatch() {
+                if (isLoading) return;
+                isLoading = true;
+
                 var end = Math.min(loadedIndex + BATCH_SIZE, shuffled.length);
                 for (var i = loadedIndex; i < end; i++) {
                     container.appendChild(createPhotoItem(shuffled[i]));
@@ -354,18 +357,21 @@
                     loading.textContent = '已加载全部 ✿';
                     loading.dataset.done = 'true';
                     if (observer) observer.disconnect();
+                    isLoading = false;
                     return;
                 }
 
                 loading.textContent = '滚动加载更多';
                 delete loading.dataset.done;
+
+                requestAnimationFrame(function () {
+                    isLoading = false;
+                });
             }
 
             var observer = new IntersectionObserver(function (entries) {
-                if (entries[0].isIntersecting && loadedIndex < shuffled.length) {
-                    observer.unobserve(loading);
+                if (entries[0].isIntersecting && !isLoading && loadedIndex < shuffled.length) {
                     loadNextBatch();
-                    observer.observe(loading);
                 }
             }, { rootMargin: '200px' });
 
