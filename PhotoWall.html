@@ -320,6 +320,7 @@
             var BATCH_SIZE = 10;
             var loadedIndex = 0;
             var allLoaded = false;
+            console.log('[PhotoWall] total ' + PHOTO_IMAGES.length + ' images, batch=' + BATCH_SIZE);
 
             function createPhotoItem(file) {
                 var item = document.createElement('div');
@@ -344,9 +345,13 @@
             }
 
             function loadNextBatch() {
-                if (allLoaded) return;
+                if (allLoaded) {
+                    console.log('[PhotoWall] loadNextBatch blocked: already allLoaded');
+                    return;
+                }
 
                 var end = Math.min(loadedIndex + BATCH_SIZE, shuffled.length);
+                console.log('[PhotoWall] loadNextBatch: ' + loadedIndex + ' -> ' + end + ' (' + (shuffled.length - end) + ' left)');
                 for (var i = loadedIndex; i < end; i++) {
                     container.appendChild(createPhotoItem(shuffled[i]));
                 }
@@ -356,21 +361,31 @@
                     allLoaded = true;
                     loading.textContent = '已加载全部 ✿';
                     loading.dataset.done = 'true';
+                    console.log('[PhotoWall] ALL LOADED, total=' + loadedIndex);
                     return;
                 }
 
                 loading.textContent = '滚动加载更多';
                 delete loading.dataset.done;
+                console.log('[PhotoWall] batch done, loading text updated, waiting for next trigger');
             }
 
+            var scrollCount = 0;
             window.addEventListener('scroll', function () {
+                scrollCount++;
                 if (allLoaded) return;
                 var rect = loading.getBoundingClientRect();
-                if (rect.top <= window.innerHeight + 200) {
+                var hit = rect.top <= window.innerHeight + 200;
+                if (scrollCount % 10 === 1) {
+                    console.log('[PhotoWall] scroll #' + scrollCount + ' loadingRect.top=' + Math.round(rect.top) + ' windowH=' + window.innerHeight + ' hit=' + hit);
+                }
+                if (hit) {
+                    console.log('[PhotoWall] scroll triggered load, loadingRect.top=' + Math.round(rect.top));
                     loadNextBatch();
                 }
             });
 
+            console.log('[PhotoWall] initial loadNextBatch call');
             loadNextBatch();
         })();
     </script>
