@@ -344,7 +344,6 @@
             }
 
             function loadNextBatch() {
-                if (isLoading) return;
                 isLoading = true;
 
                 var end = Math.min(loadedIndex + BATCH_SIZE, shuffled.length);
@@ -363,10 +362,12 @@
 
                 loading.textContent = '滚动加载更多';
                 delete loading.dataset.done;
+                isLoading = false;
 
-                requestAnimationFrame(function () {
-                    isLoading = false;
-                });
+                var rect = loading.getBoundingClientRect();
+                if (rect.top <= window.innerHeight && loadedIndex < shuffled.length) {
+                    loadNextBatch();
+                }
             }
 
             var observer = new IntersectionObserver(function (entries) {
@@ -375,7 +376,6 @@
                 }
             }, { rootMargin: '200px' });
 
-            loadNextBatch();
             observer.observe(loading);
         })();
     </script>
