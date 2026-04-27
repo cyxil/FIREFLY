@@ -363,23 +363,15 @@
                 delete loading.dataset.done;
             }
 
-            function checkAndLoad() {
+            window.addEventListener('scroll', function () {
                 if (allLoaded) return;
                 var rect = loading.getBoundingClientRect();
-                if (rect.top <= window.innerHeight + 300) {
+                if (rect.top <= window.innerHeight + 200) {
                     loadNextBatch();
                 }
-            }
+            });
 
-            window.addEventListener('scroll', checkAndLoad);
-
-            (function fill() {
-                var rect = loading.getBoundingClientRect();
-                if (rect.top <= window.innerHeight && !allLoaded) {
-                    loadNextBatch();
-                    setTimeout(fill, 16);
-                }
-            })();
+            loadNextBatch();
         })();
     </script>
 
