@@ -252,7 +252,9 @@
             #masonry-container { column-count: 1; }
             body { padding: 15px 10px; }
             h1 { font-size: 1.3em; letter-spacing: 2px; }
-            .modal-nav { display: none; }
+            .modal-nav { width: 40px; height: 40px; font-size: 28px; }
+            .modal-nav.prev { left: 8px; }
+            .modal-nav.next { right: 8px; }
         }
     </style>
 </head>
@@ -336,6 +338,18 @@
 
             navPrev.addEventListener('click', prevImage);
             navNext.addEventListener('click', nextImage);
+
+            // 触摸滑动切换
+            var touchStartX = 0;
+            modal.addEventListener('touchstart', function (e) {
+                touchStartX = e.changedTouches[0].screenX;
+            }, { passive: true });
+            modal.addEventListener('touchend', function (e) {
+                if (currentIndex < 0) return;
+                var dx = e.changedTouches[0].screenX - touchStartX;
+                if (dx > 50) prevImage();
+                else if (dx < -50) nextImage();
+            }, { passive: true });
 
             // 一次性渲染所有图片，懒加载交给浏览器原生 loading="lazy"
             shuffled.forEach(function(file, index) {
